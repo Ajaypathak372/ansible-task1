@@ -14,7 +14,7 @@
 
     - name: To install docker
       command: "yum install docker-ce --nobest -y"
-      when: ansible_distribution == RedHat
+      when: ansible_distribution == "RedHat"
 
     - name: Dependencies for docker
       pip:
@@ -61,7 +61,7 @@
         ports: 
           - "81:80"
         volumes:
-          - "{{ dir }}":/usr/local/apache2/htdocs/
+          - "{{ dir }}:/usr/local/apache2/htdocs/"
         detach: yes
         state: started
 
