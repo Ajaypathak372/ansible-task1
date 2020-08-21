@@ -1,0 +1,67 @@
+- hosts: all
+  vars_files:
+      - login.yml
+  vars:
+    - dir: /task1/
+  tasks:
+    - name: To configure yum for docker
+      yum_repository:
+        name: docker
+        description: for installing docker
+        baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+        enabled: yes
+        gpgcheck: false
+
+    - name: To install docker
+      command: "yum install docker-ce --nobest -y"
+      when: ansible_distribution == RedHat
+
+    - name: Dependencies for docker
+      pip:
+        name: docker-py
+
+    - name: Disables firewall
+      service:
+        name: firewalld
+        state: stopped
+
+    - name: Start docker services
+      service:
+        name: docker
+        state: restarted
+        enabled: yes
+
+    - name: Login into DockerHub
+      docker_login: 
+        username: "{{ uname }}"
+        password: "{{ passwd }}"
+      register: auth
+
+    - name: Pull docker images
+      docker_image:
+        name: httpd
+        source: local
+      when: auth.failed == false
+
+#    - name: Create directory
+#      file:
+#        path: /task1
+#        state: directory
+
+    - name: Copy webpages
+      copy:
+        src: a.html
+        dest: "{{ dir }}"
+        force: yes
+
+    - name: Start docker container and configure webserver
+      docker_container:
+        name: myweb1
+        image: httpd
+        ports: 
+          - "81:80"
+        volumes:
+          - "{{ dir }}":/usr/local/apache2/htdocs/
+        detach: yes
+        state: started
+
